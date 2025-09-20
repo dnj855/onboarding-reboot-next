@@ -1,0 +1,133 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* =================================
+   ONBOARDING.AI DESIGN SYSTEM
+   TailwindCSS v4 Configuration
+   ================================= */
+
+:root {
+  /* === COULEURS ONBOARDING.AI === */
+  --color-primary: #0d9488;           /* teal-600 */
+  --color-primary-hover: #0f766e;     /* teal-700 */
+  --color-primary-light: #f0fdfa;     /* teal-50 */
+  --color-primary-border: #99f6e4;    /* teal-200 */
+
+  /* === BACKGROUNDS PERSONAS === */
+  --color-bg-chloe: #f8fafc;          /* slate-50 */
+  --color-bg-admin: #f1f5f9;          /* slate-100 */
+  --color-bg-card: #ffffff;
+
+  /* === COULEURS FONCTIONNELLES === */
+  --color-success: #059669;           /* emerald-600 */
+  --color-warning: #f59e0b;           /* amber-500 */
+  --color-error: #ef4444;             /* red-500 */
+  --color-info: #3b82f6;              /* blue-500 */
+
+  /* === TEXTE ET HIÉRARCHIE === */
+  --color-text-primary: #0f172a;      /* slate-900 */
+  --color-text-secondary: #475569;    /* slate-600 */
+  --color-text-muted: #94a3b8;        /* slate-400 */
+
+  /* === BORDURES === */
+  --color-border-default: #e2e8f0;    /* slate-200 */
+  --color-border-subtle: #f1f5f9;     /* slate-100 */
+
+  /* === ANIMATIONS === */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* === SHADCN/UI VARIABLES === */
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 180 84% 36%;  /* teal-600 en HSL */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 40% 98%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 98%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 98%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 215 16.3% 46.9%;
+  --radius: 0.625rem;
+}
+
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 180 72% 55%;  /* teal-500 pour dark mode */
+  --primary-foreground: 222.2 84% 4.9%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 215 20.2% 65.1%;
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  }
+}
+
+/* === CLASSES TYPOGRAPHIQUES ONBOARDING.AI === */
+@layer utilities {
+  .heading-1 {
+    @apply text-3xl font-semibold text-slate-900 leading-tight;
+  }
+
+  .heading-2 {
+    @apply text-2xl font-medium text-slate-900 leading-tight;
+  }
+
+  .body-text {
+    @apply text-base text-slate-600 leading-relaxed;
+  }
+
+  .caption-text {
+    @apply text-sm text-slate-400 leading-normal;
+  }
+
+  /* === LAYOUTS PERSONAS === */
+  .layout-chloe {
+    @apply bg-slate-50 min-h-screen;
+  }
+
+  .layout-admin {
+    @apply bg-slate-100 min-h-screen;
+  }
+
+  /* === ANIMATIONS PERSONNALISÉES === */
+  .transition-smooth {
+    transition: all var(--duration-normal) var(--easing-default);
+  }
+
+  .transition-fast {
+    transition: all var(--duration-fast) var(--easing-default);
+  }
+}
