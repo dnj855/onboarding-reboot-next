@@ -14,6 +14,9 @@ router.post('/magic-link', AuthController.generateMagicLink);
 // POST /api/auth/verify - Valider un magic link et créer une session
 router.post('/verify', AuthController.verifyMagicLink);
 
+// POST /api/auth/refresh - Rafraîchir l'access token
+router.post('/refresh', AuthController.refreshToken);
+
 // GET /api/auth/me - Récupérer les informations de l'utilisateur connecté
 router.get('/me', authenticateToken, AuthController.getCurrentUser);
 

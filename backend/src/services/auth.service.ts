@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'crypto';
 import { ApiError, UserSession } from '@/types';
 import { prisma } from '@/lib/prisma';
+import { JwtUtils } from '@/utils/jwt.utils';
 
 // =============================================================================
 // SERVICE D'AUTHENTIFICATION
@@ -74,12 +75,13 @@ export class AuthService {
   }
 
   /**
-   * Valide un magic link et crée une session
+   * Valide un magic link et crée une session avec access/refresh tokens
    */
   static async validateMagicLinkAndCreateSession(token: string): Promise<{
     user: any;
-    sessionToken: string;
-    expiresAt: Date;
+    accessToken: string;
+    refreshToken: string;
+    refreshExpiresAt: Date;
   }> {
     try {
       const tokenHash = createHash('sha256').update(token).digest('hex');
@@ -114,33 +116,39 @@ export class AuthService {
         data: { usedAt: new Date() }
       });
 
-      // Générer token de session
-      const sessionToken = randomBytes(32).toString('hex');
-      const sessionTokenHash = createHash('sha256').update(sessionToken).digest('hex');
+      // Générer refresh token (stocké en DB, longue durée)
+      const refreshToken = randomBytes(32).toString('hex');
+      const refreshTokenHash = createHash('sha256').update(refreshToken).digest('hex');
 
-      // Expiration session : 30 jours
-      const sessionExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      // Expiration refresh token : 30 jours
+      const refreshExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-      // Créer la session
+      // Créer la session refresh
       await prisma.authSession.create({
         data: {
           userId: magicLink.user.id,
-          tokenHash: sessionTokenHash,
-          expiresAt: sessionExpiresAt
+          tokenHash: refreshTokenHash,
+          expiresAt: refreshExpiresAt
         }
+      });
+
+      // Générer access token JWT (courte durée, pas en DB)
+      const accessToken = JwtUtils.generateAccessToken({
+        userId: magicLink.user.id,
+        role: magicLink.user.role,
+        companyId: magicLink.user.companyId,
+        teamId: magicLink.user.teamId || undefined
       });
 
       return {
         user: {
           id: magicLink.user.id,
           email: magicLink.user.email,
-          role: magicLink.user.role,
-          companyId: magicLink.user.companyId,
-          teamId: magicLink.user.teamId,
-          company: magicLink.user.company
+          role: magicLink.user.role
         },
-        sessionToken, // Token en clair pour le cookie
-        expiresAt: sessionExpiresAt
+        accessToken, // JWT pour les requêtes API
+        refreshToken, // Token pour cookie HttpOnly
+        refreshExpiresAt
       };
 
     } catch (error: any) {
@@ -242,6 +250,72 @@ export class AuthService {
       throw new ApiError(
         'ALL_SESSIONS_REVOCATION_FAILED',
         'Erreur lors de la révocation des sessions',
+        500
+      );
+    }
+  }
+
+  // ===========================================================================
+  // RAFRAÎCHISSEMENT DE SESSION
+  // ===========================================================================
+
+  /**
+   * Rafraîchit un access token en utilisant le refresh token
+   */
+  static async refreshAccessToken(refreshToken: string): Promise<{
+    user: any;
+    accessToken: string;
+  }> {
+    try {
+      const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
+
+      // Rechercher la session refresh
+      const session = await prisma.authSession.findUnique({
+        where: { tokenHash },
+        include: {
+          user: {
+            include: { company: true }
+          }
+        }
+      });
+
+      if (!session) {
+        throw new ApiError('INVALID_REFRESH_TOKEN', 'Token de rafraîchissement invalide', 401);
+      }
+
+      // Vérifier l'expiration
+      if (session.expiresAt < new Date()) {
+        // Supprimer la session expirée
+        await prisma.authSession.delete({
+          where: { id: session.id }
+        });
+        throw new ApiError('EXPIRED_REFRESH_TOKEN', 'Token de rafraîchissement expiré', 401);
+      }
+
+      // Générer un nouveau access token
+      const accessToken = JwtUtils.generateAccessToken({
+        userId: session.user.id,
+        role: session.user.role,
+        companyId: session.user.companyId,
+        teamId: session.user.teamId || undefined
+      });
+
+      return {
+        user: {
+          id: session.user.id,
+          email: session.user.email,
+          role: session.user.role
+        },
+        accessToken
+      };
+
+    } catch (error: any) {
+      if (error instanceof ApiError) throw error;
+
+      console.error('Erreur rafraîchissement access token:', error);
+      throw new ApiError(
+        'TOKEN_REFRESH_FAILED',
+        'Erreur lors du rafraîchissement du token',
         500
       );
     }

@@ -69,31 +69,25 @@ export class AuthController {
         validatedData.token
       );
 
-      // Configuration du cookie de session
+      // Configuration du cookie refresh token
       const cookieOptions = {
         httpOnly: true, // Empêche l'accès JavaScript côté client
         secure: process.env.NODE_ENV === "production", // HTTPS uniquement en prod
-        sameSite: "lax" as const, // Protection CSRF
+        sameSite: "strict" as const, // Protection CSRF renforcée
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 jours en millisecondes
         path: "/", // Cookie disponible sur tout le site
       };
 
-      // Définir le cookie de session
-      res.cookie("session_token", result.sessionToken, cookieOptions);
+      // Définir le cookie refresh token
+      res.cookie("refreshToken", result.refreshToken, cookieOptions);
 
-      // Réponse avec informations utilisateur
-      const response: ApiResponse = {
-        data: {
-          message: "Authentification réussie",
-          user: {
-            id: result.user.id,
-            email: result.user.email,
-            role: result.user.role,
-            company: result.user.company,
-          },
-        },
-        meta: {
-          timestamp: new Date().toISOString(),
+      // Réponse avec access token et informations utilisateur (contrat API)
+      const response = {
+        accessToken: result.accessToken,
+        user: {
+          id: result.user.id,
+          email: result.user.email,
+          role: result.user.role,
         },
       };
 
@@ -147,35 +141,69 @@ export class AuthController {
   }
 
   // ===========================================================================
+  // RAFRAÎCHISSEMENT DE SESSION
+  // ===========================================================================
+
+  // POST /api/auth/refresh - Rafraîchir l'access token
+  static async refreshToken(req: Request, res: Response, next: NextFunction) {
+    try {
+      // Récupérer le refresh token depuis le cookie
+      const refreshToken = req.cookies?.refreshToken;
+
+      if (!refreshToken) {
+        return res.status(401).json({
+          error: {
+            code: "NO_REFRESH_TOKEN",
+            message: "Token de rafraîchissement manquant",
+          },
+        });
+      }
+
+      // Rafraîchir l'access token
+      const result = await AuthService.refreshAccessToken(refreshToken);
+
+      // Réponse avec nouvel access token (contrat API)
+      const response = {
+        accessToken: result.accessToken,
+        user: {
+          id: result.user.id,
+          email: result.user.email,
+          role: result.user.role,
+        },
+      };
+
+      res.status(200).json(response);
+    } catch (error: any) {
+      next(error);
+    }
+  }
+
+  // ===========================================================================
   // DÉCONNEXION
   // ===========================================================================
 
   // POST /api/auth/logout - Déconnecter l'utilisateur
   static async logout(req: Request, res: Response, next: NextFunction) {
     try {
-      // Récupérer le token de session depuis le cookie
-      const sessionToken = req.cookies?.session_token;
+      // Récupérer le refresh token depuis le cookie
+      const refreshToken = req.cookies?.refreshToken;
 
-      if (sessionToken) {
+      if (refreshToken) {
         // Révoquer la session en base
-        await AuthService.revokeSession(sessionToken);
+        await AuthService.revokeSession(refreshToken);
       }
 
-      // Supprimer le cookie
-      res.clearCookie("session_token", {
+      // Supprimer le cookie refresh token
+      res.clearCookie("refreshToken", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        sameSite: "strict",
         path: "/",
       });
 
-      const response: ApiResponse = {
-        data: {
-          message: "Déconnexion réussie",
-        },
-        meta: {
-          timestamp: new Date().toISOString(),
-        },
+      // Réponse selon le contrat API
+      const response = {
+        success: true,
       };
 
       res.status(200).json(response);
