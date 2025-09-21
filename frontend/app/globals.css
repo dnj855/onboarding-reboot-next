@@ -122,6 +122,10 @@
     @apply bg-slate-100 min-h-screen;
   }
 
+  .layout-manager {
+    @apply bg-blue-50 min-h-screen;
+  }
+
   /* === ANIMATIONS PERSONNALISÉES === */
   .transition-smooth {
     transition: all var(--duration-normal) var(--easing-default);
