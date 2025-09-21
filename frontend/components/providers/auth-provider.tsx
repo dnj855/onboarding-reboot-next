@@ -38,7 +38,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (!isAuthenticated) {
         try {
           await refreshAuth();
-        } catch (error) {
+        } catch {
           console.log("Session non trouvée, utilisateur non connecté.");
         }
       }

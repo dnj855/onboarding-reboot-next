@@ -29,8 +29,8 @@ function MagicLinkContent() {
         await validateMagicLink(token);
         setStatus('success');
 
-        // Redirection immédiate vers l'espace utilisateur (expérience magique)
-        router.replace('/user');
+        // Redirection automatique basée sur le rôle (le middleware redirigera vers la bonne page)
+        router.replace('/');
 
       } catch (error) {
         console.error('Erreur validation magic link:', error);

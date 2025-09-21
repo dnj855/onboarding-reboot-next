@@ -2,7 +2,7 @@
 // STORE ZUSTAND D'AUTHENTIFICATION
 // =============================================================================
 
-import { useState, useEffect } from 'react';
+// React hooks removed - not used in this file
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
