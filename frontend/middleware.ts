@@ -9,7 +9,7 @@ import { cookies } from 'next/headers';
 // CONFIGURATION DU ROUTING
 // =============================================================================
 
-// Routes protégées par rôle
+// Routes protégées par rôle - chaque rôle accède uniquement à son espace
 const PROTECTED_ROUTES = {
   COLLABORATEUR: ['/user'],
   MANAGER: ['/manager'],
@@ -87,8 +87,13 @@ function hasAccessToRoute(
     return false;
   }
 
-  // Routes publiques - protection contre les routes undefined
-  if (PUBLIC_ROUTES.some(route => route && typeof route === 'string' && pathname.startsWith(route))) {
+  // Routes publiques - vérification exacte pour éviter les conflits
+  if (PUBLIC_ROUTES.some(route => {
+    if (route === '/') {
+      return pathname === '/'; // Correspondance exacte pour la racine
+    }
+    return pathname.startsWith(route);
+  })) {
     return true;
   }
 
@@ -97,16 +102,19 @@ function hasAccessToRoute(
     return false;
   }
 
-  // Routes accessibles à tous les utilisateurs connectés - protection contre les routes undefined
-  if (PROTECTED_ROUTES.ALL.some(route => route && typeof route === 'string' && pathname.startsWith(route))) {
+  // Routes accessibles à tous les utilisateurs connectés
+  if (PROTECTED_ROUTES.ALL.some(route => pathname.startsWith(route))) {
     return true;
   }
 
-  // Routes spécifiques par rôle - protection complète
-  const roleRoutes = PROTECTED_ROUTES[userRole as keyof typeof PROTECTED_ROUTES];
-  if (roleRoutes && Array.isArray(roleRoutes)) {
-    if (roleRoutes.some(route => route && typeof route === 'string' && pathname.startsWith(route))) {
-      return true;
+  // Vérifier l'accès exclusif par rôle
+  for (const [role, routes] of Object.entries(PROTECTED_ROUTES)) {
+    if (role === 'ALL') continue; // Déjà vérifié au-dessus
+
+    // Si la route correspond à un rôle spécifique
+    if (routes.some(route => pathname.startsWith(route))) {
+      // L'utilisateur doit avoir exactement ce rôle
+      return userRole === role;
     }
   }
 
